@@ -1,0 +1,25 @@
+{
+  "name": "type",
+  "version": "1.0.0",
+  "description": "Exercies of TypeScript and Jest",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --config ./jest.config.json",
+    "build": "tsc --project ./",
+    "start": "nodemon dist/main.js",
+    "tw": "tsc -w"
+  },
+  "author": "Douglas Socorro",
+  "license": "ISC",
+  "devDependencies": {
+    "@tsconfig/node12": "^1.0.7",
+    "@types/express": "^4.17.8",
+    "ts-node": "^9.0.0"
+  },
+  "dependencies": {
+    "@types/mongodb": "^4.0.7",
+    "cli-table": "^0.3.6",
+    "mongodb": "^4.1.0",
+    "vorpal": "^1.12.0"
+  }
+}
