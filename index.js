@@ -1,5 +1,6 @@
-const { MongoClient } = require('mongodb');
-const CLI = require('vorpal')();
+const { MongoClient } = require('mongodb')
+const Table = require('./table.js')
+const CLI = require('vorpal')()
 
 class App {
 	constructor(db) {
@@ -22,14 +23,13 @@ class App {
 		return result
 	}
 
-	async search(filter) {
+	async search(filter, options) {
 		const cursor = await this.inventory
-								             .find(filter)
+								             .find(filter, options)
 
 		const results = await cursor.toArray()
 
-		return results
-
+    return Table.create(results)
 	}
 
 	async update(id, newData) {
@@ -63,7 +63,10 @@ class App {
 		
 		const firstElement = await cursor.next()
 
-		return firstElement.id
+		if(firstElement)
+			return firstElement.id
+		else 
+			return 0 
 	}
 }
 
@@ -80,7 +83,7 @@ class App {
 
 	// CREATE
 	CLI.command('create', 'Add a product to db')
-		.alias('a')
+		.alias('c')
 		.action((args, cb) => {
 			CLI.activeCommand
 				.prompt(
@@ -123,12 +126,21 @@ class App {
 		.option('-n, --name <name>', 'Specify the name')
 
 		.option('-a, --amout <amount>', 'specify the amount')
-		.option('-p, --price <price>', 'specify the price')
+		//.option('-p, --price <price>', 'specify the price')
 
 		.option('-c, --category <category>', 'specify a category')
+		.option('-p, --paginate <#prod>', 'specify a pagination')
 
 		.action((args, cb) => {
 			CLI.activeCommand.log(args)
+
+			const filter = JSON.parse(JSON.stringify(args))
+			filter.paginate = undefined
+
+			let options = {
+				skip: 0,
+				sort: { id: -1 }
+			}
 
 			APP
 				.search(args.options)
