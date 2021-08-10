@@ -24,6 +24,14 @@ class App {
 	}
 
 	async search(filter, options) {
+		/*
+			console.log(`the filter is: ${filter}`)
+			console.log(filter)
+			console.log(`the options is: ${options}`)
+			console.log(options)
+		*/
+		
+
 		const cursor = await this.inventory
 								             .find(filter, options)
 
@@ -68,6 +76,12 @@ class App {
 		else 
 			return 0 
 	}
+
+	async getNumberOfDocs(filter) {
+		const numOfDocs = await this.inventory.countDocuments(filter)
+
+		return numOfDocs
+	}
 }
 
 (async () => {
@@ -85,6 +99,7 @@ class App {
 	CLI.command('create', 'Add a product to db')
 		.alias('c')
 		.action((args, cb) => {
+			CLI.activeCommand.log('Creating a new Product:\n')
 			CLI.activeCommand
 				.prompt(
 				[{
@@ -129,26 +144,64 @@ class App {
 		//.option('-p, --price <price>', 'specify the price')
 
 		.option('-c, --category <category>', 'specify a category')
-		.option('-p, --paginate <#prod>', 'specify a pagination')
+		.option('-p, --paginate <prod>', 'specify a pagination')
 
-		.action((args, cb) => {
-			CLI.activeCommand.log(args)
+		.action(async (args, cb) => {
+			//CLI.activeCommand.log(args)
+			CLI.activeCommand.log('The products in data base are:')
 
-			const filter = JSON.parse(JSON.stringify(args))
+			const filter = JSON.parse(JSON.stringify(args.options))
 			filter.paginate = undefined
 
 			let options = {
+				sort: { id: 1 },
 				skip: 0,
-				sort: { id: -1 }
+				limit: args.options.paginate
+				
 			}
 
-			APP
-				.search(args.options)
-				.then((res) => { 
+			let moreProducts = false
+
+			let numOfDocuments = await APP.getNumberOfDocs(filter)
+			let remainingProducts = numOfDocuments - args.options.paginate
+
+			if((numOfDocuments - args.options.paginate) > 0) {
+				do {
+
+					let res = await APP.search(filter, options)
 					CLI.activeCommand.log(res)
 
-					cb()
-				})
+					let answer = {}
+
+					if( remainingProducts > 0) {
+						answer = await CLI.activeCommand.prompt([{
+							type: 'confirm', 
+							name: 'moreProducts', 
+							message: `${remainingProducts} remaining products, get more?`}
+						])
+
+					} else {
+						moreProducts = false
+						continue
+					}
+						
+					remainingProducts -= args.options.paginate
+
+					if(args.options.paginate)
+						options.skip += args.options.paginate
+
+					moreProducts = answer.moreProducts
+
+
+			} while(moreProducts)
+
+				cb()
+			} else {
+				let res = await APP.search(filter, options)
+				CLI.activeCommand.log(res)				
+			}
+
+				
 
 		})
 	
@@ -156,7 +209,8 @@ class App {
 	CLI.command('update <id>', 'Update a product')
 		.alias('u')
 		.action((args, cb) => {
-			CLI.activeCommand.log(args)
+			CLI.activeCommand.log('Updating an existing product:\n')
+			
 			APP.getOne(args.id)
 			.then((res) => {
 				CLI.activeCommand.log(res)
