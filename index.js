@@ -193,7 +193,7 @@ class App {
 					moreProducts = answer.moreProducts
 
 
-			} while(moreProducts)
+				} while(moreProducts)
 
 				cb()
 			} else {
